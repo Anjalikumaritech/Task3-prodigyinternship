@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Local Store - E-Commerce</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0; padding: 0;
+      background: #f8f9fa;
+    }
+    header {
+      background: #343a40;
+      color: white;
+      padding: 1rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { margin: 0; font-size: 1.5rem; }
+    .cart {
+      background: #ffc107;
+      color: #000;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1rem;
+      padding: 1rem;
+    }
+    .product {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .product img {
+      max-width: 100%;
+      border-radius: 8px;
+    }
+    .product h3 { margin: 0.5rem 0; }
+    .product p { font-size: 0.9rem; color: #555; }
+    .price { font-weight: bold; margin: 0.5rem 0; }
+    .btn {
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .btn:hover { background: #218838; }
+    /* Cart modal */
+    .modal {
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none; justify-content: center; align-items: center;
+    }
+    .modal-content {
+      background: white;
+      padding: 1rem;
+      border-radius: 8px;
+      width: 90%; max-width: 500px;
+    }
+    .modal-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 1rem;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.5rem; border-bottom: 1px solid #ccc; }
+    .close-btn { cursor: pointer; font-weight: bold; color: #dc3545; }
+    .checkout {
+      background: #007bff;
+      margin-top: 1rem;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🛍 Local Store</h1>
+    <div class="cart" id="cartBtn">Cart (0)</div>
+  </header>
+
+  <main id="product-list">
+    <!-- Products will be injected here -->
+  </main>
+
+  <!-- Cart Modal -->
+  <div class="modal" id="cartModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Your Cart</h2>
+        <span class="close-btn" id="closeCart">&times;</span>
+      </div>
+      <div id="cartItems"></div>
+      <button class="btn checkout" onclick="checkout()">Checkout</button>
+    </div>
+  </div>
+
+  <script>
+    const products = [
+      { id: 1, name: "Fresh Apples", desc: "Locally grown red apples.", price: 3.5, img: "https://via.placeholder.com/200?text=Apples" },
+      { id: 2, name: "Organic Milk", desc: "Farm fresh whole milk.", price: 2.0, img: "https://via.placeholder.com/200?text=Milk" },
+      { id: 3, name: "Brown Bread", desc: "Healthy multigrain bread.", price: 1.5, img: "https://via.placeholder.com/200?text=Bread" },
+      { id: 4, name: "Coffee Beans", desc: "Premium roasted beans.", price: 6.0, img: "https://via.placeholder.com/200?text=Coffee" },
+    ];
+
+    let cart = [];
+
+    const productList = document.getElementById("product-list");
+    const cartBtn = document.getElementById("cartBtn");
+    const cartModal = document.getElementById("cartModal");
+    const closeCart = document.getElementById("closeCart");
+    const cartItems = document.getElementById("cartItems");
+
+    function renderProducts() {
+      productList.innerHTML = "";
+      products.forEach(p => {
+        const div = document.createElement("div");
+        div.className = "product";
+        div.innerHTML = `
+          <img src="${p.img}" alt="${p.name}">
+          <h3>${p.name}</h3>
+          <p>${p.desc}</p>
+          <div class="price">$${p.price.toFixed(2)}</div>
+          <button class="btn" onclick="addToCart(${p.id})">Add to Cart</button>
+        `;
+        productList.appendChild(div);
+      });
+    }
+
+    function addToCart(id) {
+      const product = products.find(p => p.id === id);
+      const existing = cart.find(item => item.id === id);
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ ...product, qty: 1 });
+      }
+      updateCartCount();
+    }
+
+    function updateCartCount() {
+      cartBtn.textContent = `Cart (${cart.reduce((sum, i) => sum + i.qty, 0)})`;
+    }
+
+    function showCart() {
+      cartItems.innerHTML = "";
+      if (cart.length === 0) {
+        cartItems.innerHTML = "<p>Your cart is empty.</p>";
+      } else {
+        let total = 0;
+        let table = `<table>
+          <tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr>`;
+        cart.forEach(item => {
+          const itemTotal = item.qty * item.price;
+          total += itemTotal;
+          table += `<tr>
+            <td>${item.name}</td>
+            <td>${item.qty}</td>
+            <td>$${item.price.toFixed(2)}</td>
+            <td>$${itemTotal.toFixed(2)}</td>
+          </tr>`;
+        });
+        table += `<tr><td colspan="3"><strong>Grand Total</strong></td><td><strong>$${total.toFixed(2)}</strong></td></tr></table>`;
+        cartItems.innerHTML = table;
+      }
+      cartModal.style.display = "flex";
+    }
+
+    function checkout() {
+      if (cart.length === 0) {
+        alert("Your cart is empty!");
+      } else {
+        alert("✅ Thank you for your purchase!");
+        cart = [];
+        updateCartCount();
+        cartModal.style.display = "none";
+      }
+    }
+
+    cartBtn.onclick = showCart;
+    closeCart.onclick = () => cartModal.style.display = "none";
+    window.onclick = (e) => { if (e.target === cartModal) cartModal.style.display = "none"; };
+
+    renderProducts();
+  </script>
+</body>
+</html>
